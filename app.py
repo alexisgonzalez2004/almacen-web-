@@ -7,7 +7,7 @@ app = Flask(__name__)
 SUPABASE_URL = "https://mpzufzqoqtazojjupjxf.supabase.co"
 SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
 
-# Plantilla HTML visual para celulares
+# Plantilla HTML visual para celulares con alerta de colores en stock
 HTML_PLANTILLA = """
 <!DOCTYPE html>
 <html lang="es">
@@ -24,10 +24,10 @@ HTML_PLANTILLA = """
         .badge { background: #D84315; color: #ffffff; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; display: inline-block; letter-spacing: 0.5px; }
         .img-container { text-align: center; margin-bottom: 16px; background: #262626; border-radius: 10px; padding: 8px; border: 1px solid #333; }
         .img-container img { max-width: 100%; max-height: 200px; border-radius: 8px; object-fit: contain; }
-        .stock-box { background: #1a2625; border-left: 4px solid #00e676; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
-        .stock-title { font-size: 11px; color: #80cbc4; text-transform: uppercase; font-weight: bold; }
-        .stock-sub { font-size: 12px; color: #b2dfdb; margin-top: 2px; }
-        .stock-value { font-size: 22px; font-weight: bold; color: #00e676; }
+        .stock-box { background: #1a1a1a; border-left: 4px solid {{ color_stock }}; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #2a2a2a; }
+        .stock-title { font-size: 11px; color: #b0bec5; text-transform: uppercase; font-weight: bold; }
+        .stock-sub { font-size: 12px; color: #90a4ae; margin-top: 2px; }
+        .stock-value { font-size: 22px; font-weight: bold; color: {{ color_stock }}; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
         .item { background: #282828; padding: 10px 12px; border-radius: 8px; border: 1px solid #333; }
         .item-full { grid-column: span 2; }
@@ -118,8 +118,33 @@ def ver_producto(id_producto):
         if response.status_code == 200:
             data = response.json()
             if data:
-                # Renderiza la vista de la tarjeta usando Jinja/Flask
-                return render_template_string(HTML_PLANTILLA, p=data[0])
+                p = data[0]
+                
+                # Conversión segura a enteros para la comparación
+                try:
+                    stock = int(p.get('stock', 0))
+                except (ValueError, TypeError):
+                    stock = 0
+                    
+                try:
+                    stock_minimo = int(p.get('stock_minimo', 0))
+                except (ValueError, TypeError):
+                    stock_minimo = -1
+                    
+                try:
+                    punto_reorden = int(p.get('punto_reorden', 0))
+                except (ValueError, TypeError):
+                    punto_reorden = -1
+
+                # Lógica de colores según tus reglas:
+                if stock_minimo != -1 and stock <= stock_minimo:
+                    color_stock = "#ff5252"  # Rojo (Crítico: igual o menor al stock mínimo)
+                elif punto_reorden != -1 and stock <= punto_reorden:
+                    color_stock = "#ffd700"  # Amarillo (Advertencia: menor o igual a reorden)
+                else:
+                    color_stock = "#00e676"  # Verde (Stock adecuado)
+
+                return render_template_string(HTML_PLANTILLA, p=p, color_stock=color_stock)
             else:
                 return f"<h3 style='color:white; background:#121212; padding:20px;'>Producto con ID '{id_producto}' no encontrado</h3>", 404
         else:
