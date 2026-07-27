@@ -5,7 +5,7 @@ from supabase.lib.client_options import ClientOptions
 
 app = Flask(__name__)
 
-SUPABASE_URL = os.getenv("SUPABASE_URL", "https://tu-proyecto.supabase.co")
+SUPABASE_URL = os.getenv("SUPABASE_URL", "https://mpzufzqoqtazojjupjxf.supabase.co/rest/v1/")
 # Obtenemos la clave de Render (sb_secret_...)
 SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
 
