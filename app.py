@@ -7,32 +7,31 @@ app = Flask(__name__)
 
 SUPABASE_URL = "https://mpzufzqoqtazojjupjxf.supabase.co"
 SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
-
-# JWT falso para saltar la validación interna de la librería con llaves nuevas
 DUMMY_JWT = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.s43d3p-a-333"
 
-# Inicialización segura inyectando la Secret Key real en los headers
-supabase = None
-try:
-    if SUPABASE_KEY.startswith("sb_"):
-        supabase = create_client(
-            SUPABASE_URL,
-            DUMMY_JWT,
-            options=ClientOptions(
-                headers={
-                    "apiKey": SUPABASE_KEY,
-                    "Authorization": f"Bearer {SUPABASE_KEY}"
-                }
+def get_supabase_client():
+    try:
+        if SUPABASE_KEY.startswith("sb_"):
+            return create_client(
+                SUPABASE_URL,
+                DUMMY_JWT,
+                options=ClientOptions(
+                    headers={
+                        "apiKey": SUPABASE_KEY,
+                        "Authorization": f"Bearer {SUPABASE_KEY}"
+                    }
+                )
             )
-        )
-    else:
-        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-except Exception as e:
-    print(f"Error al inicializar Supabase: {e}")
+        else:
+            return create_client(SUPABASE_URL, SUPABASE_KEY)
+    except Exception as e:
+        print(f"Error al conectar: {e}")
+        return None
 
 @app.route('/')
 def home():
-    if not supabase:
+    client = get_supabase_client()
+    if not client:
         return jsonify({
             "status": "error",
             "message": "Revisa que la SUPABASE_KEY en Render esté configurada correctamente."
@@ -45,11 +44,12 @@ def home():
 
 @app.route('/p/<id_producto>')
 def ver_producto(id_producto):
-    if not supabase:
+    client = get_supabase_client()
+    if not client:
         return jsonify({"error": "Supabase no está conectado en el servidor"}), 500
     
     try:
-        response = supabase.table('productos').select("*").eq('id', id_producto).execute()
+        response = client.table('productos').select("*").eq('id', id_producto).execute()
         
         if response.data:
             return jsonify(response.data[0])
