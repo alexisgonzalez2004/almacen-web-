@@ -5,37 +5,37 @@ from supabase.lib.client_options import ClientOptions
 
 app = Flask(__name__)
 
-# Configuración de credenciales desde las Variables de Entorno de Render
-# NOTA: Reemplaza la URL de abajo si no la agregaste en las variables de Render
 SUPABASE_URL = os.getenv("SUPABASE_URL", "https://tu-proyecto.supabase.co")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+# Obtenemos la clave de Render (sb_secret_...)
+SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
 
-# Inicialización de Supabase compatible con las claves de formato sb_secret_
-if SUPABASE_KEY:
+# Creamos un JWT mínimo sintácticamente válido únicamente para superar 
+# la validación local de supabase-py al inicializar el objeto
+DUMMY_JWT = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.s43d3p-a-333"
+
+# Si SUPABASE_KEY empieza por "sb_", usamos la clave real dentro de los headers HTTP
+if SUPABASE_KEY.startswith("sb_"):
     supabase: Client = create_client(
         SUPABASE_URL,
-        SUPABASE_KEY,
+        DUMMY_JWT,  # Pasa la validación sintáctica local
         options=ClientOptions(
-            headers={"apiKey": SUPABASE_KEY}
+            headers={
+                "apiKey": SUPABASE_KEY,
+                "Authorization": f"Bearer {SUPABASE_KEY}"
+            }
         )
     )
 else:
-    supabase = None
+    # Si usaste una clave tradicional (eyJ...), la usa directamente
+    supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 @app.route('/')
 def home():
-    if not supabase:
-        return jsonify({
-            "status": "error",
-            "message": "Falta configurar la variable SUPABASE_KEY en Render."
-        }), 500
-
     return jsonify({
         "status": "online",
-        "message": "Servidor corriendo y conectado a Supabase exitosamente."
+        "message": "Servidor activo en Render"
     })
 
 if __name__ == '__main__':
-    # Puerto dinámico para Render o local (puerto 5000)
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
