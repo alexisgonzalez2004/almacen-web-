@@ -1,33 +1,17 @@
 import os
 from flask import Flask, jsonify
 from supabase import create_client, Client
-from supabase.lib.client_options import ClientOptions
 
 app = Flask(__name__)
 
 SUPABASE_URL = "https://mpzufzqoqtazojjupjxf.supabase.co"
 SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
 
-# Usamos un JWT falso meramente para superar la validación sintáctica interna de supabase-py con llaves nuevas
-DUMMY_JWT = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.s43d3p-a-333"
-
-# Inicialización segura inyectando la Secret Key dentro de los headers de la API
-supabase = None
+# Inicialización directa y limpia usando la llave pública
 try:
-    if SUPABASE_KEY.startswith("sb_"):
-        supabase = create_client(
-            SUPABASE_URL,
-            DUMMY_JWT,
-            options=ClientOptions(
-                headers={
-                    "apiKey": SUPABASE_KEY,
-                    "Authorization": f"Bearer {SUPABASE_KEY}"
-                }
-            )
-        )
-    else:
-        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 except Exception as e:
+    supabase = None
     print(f"Error al inicializar Supabase: {e}")
 
 @app.route('/')
@@ -43,15 +27,12 @@ def home():
         "message": "Servidor activo en Render y conectado a Supabase exitosamente."
     })
 
-# Ruta para mostrar la información del producto cuando se escanea el código QR
 @app.route('/p/<id_producto>')
 def ver_producto(id_producto):
     if not supabase:
         return jsonify({"error": "Supabase no está conectado en el servidor"}), 500
     
     try:
-        # Nota: Asegúrate de que 'productos' sea el nombre exacto de tu tabla en Supabase. 
-        # Si tu tabla se llama diferente (ej. 'almacen' o 'inventario'), cámbiala aquí abajo:
         response = supabase.table('productos').select("*").eq('id', id_producto).execute()
         
         if response.data:
