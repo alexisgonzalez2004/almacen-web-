@@ -5,19 +5,15 @@ from supabase.lib.client_options import ClientOptions
 
 app = Flask(__name__)
 
-SUPABASE_URL = os.getenv("SUPABASE_URL", "https://mpzufzqoqtazojjupjxf.supabase.co/rest/v1/")
-# Obtenemos la clave de Render (sb_secret_...)
+SUPABASE_URL = "https://mpzufzqoqtazojjupjxf.supabase.co"
 SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
 
-# Creamos un JWT mínimo sintácticamente válido únicamente para superar 
-# la validación local de supabase-py al inicializar el objeto
 DUMMY_JWT = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.s43d3p-a-333"
 
-# Si SUPABASE_KEY empieza por "sb_", usamos la clave real dentro de los headers HTTP
 if SUPABASE_KEY.startswith("sb_"):
     supabase: Client = create_client(
         SUPABASE_URL,
-        DUMMY_JWT,  # Pasa la validación sintáctica local
+        DUMMY_JWT,
         options=ClientOptions(
             headers={
                 "apiKey": SUPABASE_KEY,
@@ -26,7 +22,6 @@ if SUPABASE_KEY.startswith("sb_"):
         )
     )
 else:
-    # Si usaste una clave tradicional (eyJ...), la usa directamente
     supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 @app.route('/')
