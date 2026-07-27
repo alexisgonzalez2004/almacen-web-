@@ -6,7 +6,7 @@ app = Flask(__name__)
 
 # Credenciales de Supabase
 SUPABASE_URL = "https://mpzufzqoqtazojjupjxf.supabase.co"
-SUPABASE_KEY = "sb_publishable_2aykMEmM9VwpvLpnTej3FQ_o1IG0..." # Asegúrate de que esté tu llave completa
+SUPABASE_KEY = "sb_publishable_2aykMEmM9VWpvLpnTej3FQ_o1IG0QGF" # Asegúrate de que esté tu llave completa
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
