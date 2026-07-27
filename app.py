@@ -1,17 +1,33 @@
 import os
 from flask import Flask, jsonify
 from supabase import create_client, Client
+from supabase.lib.client_options import ClientOptions
 
 app = Flask(__name__)
 
 SUPABASE_URL = "https://mpzufzqoqtazojjupjxf.supabase.co"
 SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
 
-# Inicialización directa y limpia usando la llave pública
+# JWT falso para saltar la validación interna de la librería con llaves nuevas
+DUMMY_JWT = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.s43d3p-a-333"
+
+# Inicialización segura inyectando la Secret Key real en los headers
+supabase = None
 try:
-    supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+    if SUPABASE_KEY.startswith("sb_"):
+        supabase = create_client(
+            SUPABASE_URL,
+            DUMMY_JWT,
+            options=ClientOptions(
+                headers={
+                    "apiKey": SUPABASE_KEY,
+                    "Authorization": f"Bearer {SUPABASE_KEY}"
+                }
+            )
+        )
+    else:
+        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 except Exception as e:
-    supabase = None
     print(f"Error al inicializar Supabase: {e}")
 
 @app.route('/')
